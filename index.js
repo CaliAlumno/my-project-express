@@ -1,179 +1,232 @@
-//*****constantes requeridad 'paquetes'*/
+// ***** Paquetes requeridos *****
 const express = require('express');
-const sqlite3 = require('sqlite3');
+const sqlite3 = require('sqlite3').verbose();
 
-//***** Instancias*/
-
+// ***** Instancia *****
 const app = express();
 
-//***** configuraciones */
+// ***** Configuración *****
 app.set('view engine', 'ejs');
 
-//***** Middleware */
+// ***** Middleware *****
 app.use(express.static('public'));
-app.use(express.urlencoded({extended:false}));
+app.use(express.urlencoded({ extended: false }));
 
-//***** DB CONECTION*/
-//objeto con 3 parametros, nombreDB, tipo de apertura, error de return
-const db = new sqlite3.Database('datos.db',sqlite3.OPEN_READWRITE,(error)=>{
-    if(error){
-        console.log('DB CONECTION FAILED');
-    }else{
-        console.log('CONECTION SUCCESFULL');
+// ***** Conexión DB *****
+// OPEN_CREATE permite crearla si no existe
+const db = new sqlite3.Database('./datos.db',
+  sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+  (error) => {
+    if (error) {
+      console.log('❌ DB CONNECTION FAILED');
+    } else {
+      console.log('✅ CONNECTION SUCCESSFUL');
     }
-});
+  }
+);
 
-//***** Rutas */
-app.get('/', (req, res)=>{
-    let sql = "select productos.id, nombre, marcas.marca, precio, stock " +
-     " from productos, marcas where productos.marca = marcas.id";
-    db.all(sql,(error, resultado)=>{
-        if(error){
-            console.log('CONSULTFAILED');
-        }else{
-            sql = "select * from marcas";
-            db.all(sql, (error, marcas)=>{
-                if(error)
-                    console.log('Consult Marks Failed');
-                else
-                    res.render('principal.ejs', {resultado, marcas});
+// ===== RUTAS =====
 
-            });
-        }
-    })
-});
+// Página principal
+app.get('/', (req, res) => {
+  let sql = `
+    SELECT productos.id, nombre, marcas.marca, precio, stock
+    FROM productos
+    INNER JOIN marcas ON productos.marca = marcas.id
+  `;
 
-app.post('/nuevo', (req, res)=>{
-    const {nombre, marca, precio, stock} = req.body;
-    const sql = 'insert into productos (nombre,marca,precio,stock) values (?,?,?,?)';
-    db.run(sql,[nombre,marca,precio,stock],(error)=>{
-        if(error)
-            console.log('FAILED INSERT DATA');
-        else
-            res.redirect('/');
+  db.all(sql, (error, resultado) => {
+    if (error) {
+      console.log('❌ CONSULT FAILED');
+      return res.send("Error en consulta principal");
+    }
+
+    db.all("SELECT * FROM marcas", (error, marcas) => {
+      if (error) {
+        console.log('❌ CONSULT MARKS FAILED');
+        return res.send("Error en consulta marcas");
+      }
+
+      res.render('principal.ejs', { resultado, marcas });
     });
+  });
 });
 
-app.get('/eliminar',(req, res)=>{
-    const id = req.query.id;
-    const sql = 'delete from productos where id =?';
-    db.run(sql, [id],(error)=>{
-        if(error)
-            console.log('DELETE SUCCESFULL');
-        else
-            res.redirect('/');
+// Nuevo producto
+app.post('/nuevo', (req, res) => {
+  const { nombre, marca, precio, stock } = req.body;
+
+  const sql = `
+    INSERT INTO productos (nombre, marca, precio, stock)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.run(sql, [nombre, marca, precio, stock], (error) => {
+    if (error) {
+      console.log('❌ INSERT FAILED');
+      return res.send("Error insertando");
+    }
+
+    res.redirect('/');
+  });
+});
+
+// Eliminar producto
+app.get('/eliminar', (req, res) => {
+  const id = req.query.id;
+
+  db.run('DELETE FROM productos WHERE id = ?', [id], (error) => {
+    if (error) {
+      console.log('❌ DELETE FAILED');
+      return res.send("Error eliminando");
+    }
+
+    res.redirect('/');
+  });
+});
+
+// Editar producto (form)
+app.get('/edit', (req, res) => {
+  const id = req.query.id;
+
+  db.all('SELECT * FROM productos WHERE id = ?', [id], (error, fila) => {
+    if (error) {
+      console.log('❌ SEARCH FAILED');
+      return res.send("Error buscando");
+    }
+
+    db.all('SELECT * FROM marcas', (error, marcas) => {
+      if (error) {
+        console.log('❌ CONSULT MARK FAILED');
+        return res.send("Error marcas");
+      }
+
+      res.render('edit.ejs', { fila, marcas });
     });
+  });
 });
 
-app.get('/edit', (req, res) =>{
-    const id = req.query.id;
-    let sql = 'select* from productos where id =?';
-    db.all(sql, [id],(error, fila)=>{
-        if(error)
-            console.log(' Search SUCCESFULL');
-        else
-            sql = "select * from marcas";
-            db.all(sql, (error, marcas)=>{
-                if(error){
-                    console.log('Consult Mark Failed');
-                }else
-                    res.render('edit.ejs', {fila,  marcas});
-            });
+// Actualizar producto
+app.post('/editar', (req, res) => {
+  const { id, nombre, marca, precio, stock } = req.body;
+
+  const sql = `
+    UPDATE productos
+    SET nombre = ?, marca = ?, precio = ?, stock = ?
+    WHERE id = ?
+  `;
+
+  db.run(sql, [nombre, marca, precio, stock, id], (error) => {
+    if (error) {
+      console.log('❌ UPDATE FAILED');
+      return res.send("Error actualizando");
+    }
+
+    res.redirect('/');
+  });
+});
+
+// Buscar producto
+app.post('/search', (req, res) => {
+  const nombre = req.body.buscar;
+
+  let sql = `
+    SELECT productos.id, nombre, marcas.marca, precio, stock
+    FROM productos
+    INNER JOIN marcas ON productos.marca = marcas.id
+    WHERE nombre LIKE ?
+  `;
+
+  db.all(sql, [nombre + '%'], (error, resultado) => {
+    if (error) {
+      console.log('❌ SEARCH FAILED');
+      return res.send("Error búsqueda");
+    }
+
+    db.all("SELECT * FROM marcas", (error, marcas) => {
+      if (error) {
+        console.log('❌ CONSULT MARKS FAILED');
+        return res.send("Error marcas");
+      }
+
+      res.render('principal.ejs', { resultado, marcas });
     });
+  });
 });
 
-app.post('/editar', (req, res)=>{
-    const {id, nombre, marca, precio, stock} = req.body;
-    const sql = "update productos set nombre=?, marca=?, precio=?, stock=? where id=?";
-    db.run(sql, [nombre, marca, precio, stock, id], (error)=>{
-        if(error)
-            console.log('UPDATE FAILED');
-        else
-            res.redirect('/');
-    });
+// ===== MARCAS =====
+
+// Ver marcas
+app.get('/marcas', (req, res) => {
+  db.all('SELECT * FROM marcas ORDER BY marca', (error, filas) => {
+    if (error) {
+      console.log('❌ FAILED MARCAS');
+      return res.send("Error marcas");
+    }
+
+    res.render('marcas.ejs', { filas });
+  });
 });
 
-app.post('/search',(req, res) =>{
-    const nombre = req.body.buscar;
-    let sql = "select productos.id, nombre, marcas.marca, precio, stock " +
-     " from productos, marcas where productos.marca = marcas.id " +
-     " and nombre like ?";
-    db.all(sql, [nombre+'%'], (error, resultado)=>{
-        if(error){
-            console.log('SEARCH FAILED');
-        }
-        else{
-             sql = "select * from marcas";
-            db.all(sql, (error, marcas)=>{
-                if(error)
-                    console.log('Consult Marks Failed');
-                else
-                    res.render('principal.ejs', {resultado, marcas});
+// Nueva marca
+app.post('/nueva_marca', (req, res) => {
+  const marca = req.body.marca;
 
-            });
-        }
-    });
+  db.run('INSERT INTO marcas (marca) VALUES (?)', [marca], (error) => {
+    if (error) {
+      console.log('❌ FAILED INSERT MARCA');
+      return res.send("Error insert marca");
+    }
+
+    res.redirect('/marcas');
+  });
 });
 
+// Editar marca (form)
+app.get('/editar_marca', (req, res) => {
+  const id = req.query.id;
 
-app.get('/marcas', (req, res) =>{
-    const sql = 'select * from marcas order by marca';
-    db.all(sql, (error, filas)=>{
-        if(error)
-            console.log('FAILED MARCASS');
-        else
-            res.render('marcas.ejs',{filas})
-    });
+  db.all('SELECT * FROM marcas WHERE id = ?', [id], (error, fila) => {
+    if (error) {
+      console.log('❌ FAILED EDIT MARCA');
+      return res.send("Error edit marca");
+    }
+
+    res.render('editar_marcas.ejs', { fila });
+  });
 });
 
-app.post('/nueva_marca', (req, res)=>{
-    const marca = req.body.marca;
-    const sql = 'insert into marcas (marca) values (?)';
-    db.run(sql,[marca],(error)=>{
-        if(error)
-            console.log('FAILED INSERT MARC');
-        else
-            res.redirect('/marcas');
-    });
+// Actualizar marca
+app.post('/editar_marca', (req, res) => {
+  const { id, marca } = req.body;
+
+  db.run('UPDATE marcas SET marca = ? WHERE id = ?', [marca, id], (error) => {
+    if (error) {
+      console.log('❌ FAILED UPDATE MARCA');
+      return res.send("Error update marca");
+    }
+
+    res.redirect('/marcas');
+  });
 });
 
-app.get('/editar_marca', (req, res) =>{
-    const id =req.query.id;
-    const sql = 'select * from marcas where id=?';
-    db.all(sql, [id], (error, fila)=>{
-        if(error)
-            console.log('FAILED EDIT MARCASS');
-        else
-            res.render('editar_marcas.ejs',{fila})
-    });
+// Eliminar marca
+app.get('/eliminar_marca', (req, res) => {
+  const id = req.query.id;
+
+  db.run('DELETE FROM marcas WHERE id = ?', [id], (error) => {
+    if (error) {
+      console.log('❌ FAILED DELETE MARCA');
+      return res.send("Error delete marca");
+    }
+
+    res.redirect('/marcas');
+  });
 });
 
-app.post('/editar_marca', (req, res)=>{
-    const {id, marca} = req.body;
-    const sql = 'update marcas set marca=? where id=?';
-    db.run(sql,[marca, id],(error)=>{
-        if(error)
-            console.log('FAILED UPDATE MARKET');
-        else
-            res.redirect('/marcas');
-    });
-});
-
-app.get('/eliminar_marca',(req, res)=>{
-    const id = req.query.id;
-    const sql = 'delete from marcas where id =?';
-    db.run(sql, [id],(error)=>{
-        if(error)
-            console.log('DELETE SUCCESFULL');
-        else
-            res.redirect('/marcas');
-    });
-});
-
+// ===== PUERTO DINÁMICO PARA RENDER =====
 const PORT = process.env.PORT || 3000;
 
-
-//***** Ejecución del servidor*/
-app.listen(PORT, ()=>{
-    console.log('PonshitoReady');
-})
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+});
