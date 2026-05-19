@@ -1,0 +1,72 @@
+<%- include('encabezado.ejs') %>
+    <!--Boton nueva marca-->
+    <div class="container-fluid p-4">
+        <div class="mt-2 mb-2">
+            <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ventana_nueva_marca"> <img
+                    src="imagenes/nuevo_blanco.png"> Nueva Marca </a>
+            <!-- <input type="button" value="Nuevo producto" class="btn btn-primary"> -->
+        </div>
+        <!-- Tabla de marcas -->
+        <div>
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Marca</th>
+                                <th scope="col" class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let i=1; for (let fila of filas) { %>
+                                <tr class="align-middle"">
+                                <th scope=" row">
+                                    <%= i++ %>
+                                        </th>
+                                        <td>
+                                            <%= fila.marca %>
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="/editar_marca?id=<%= fila.id %>" class="btn btn-success"><img
+                                                    src="imagenes/edit.png"></a>
+                                            <a href="/eliminar_marca?id=<%= fila.id %>"
+                                                onclick="return confirm('Do you sure to delete object this ?')"
+                                                class="btn btn-danger"><img src="imagenes/delete.png"></a>
+                                        </td>
+                                </tr>
+                                <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- fin tabla de productos -->
+
+
+        <!-- Ventana de nueva marca -->
+        <form action="/nueva_marca" method="post">
+            <div class="modal fade" id="ventana_nueva_marca" data-bs-backdrop="static" data-bs-keyboard="false"
+                tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="staticBackdropLabel">Agregar nueva Marca</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" name="marca" class="form-control" placeholder="escribir una marca nueva"
+                                required minlength="2" maxlength="30">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Agregar</button>
+                            <button type="reset" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Fin de ventana de nuevo producto-->
+
+    </div>
+    <%- include('pie_pagina.ejs') %>

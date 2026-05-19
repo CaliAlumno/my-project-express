@@ -1,0 +1,26 @@
+
+<%- include('encabezado.ejs') %>
+
+
+    <form action="/editar_marca" method="post">
+    <div class="mx-auto">
+        <div class="card mx-auto mt-5" style="width: 25rem;">
+            <div class="card-body">
+                <input type="hidden" name="id" value="<%= fila[0].id %>">
+                <div class="modal-body">
+                    <label>Editar Marca</label>
+                    <input type="text" name="marca" class="form-control" required
+                        minlength="4" maxlength="30" value="<%= fila[0].marca %>">
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">Modificar</button>
+                    <button type="reset" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+    </form>
+
+<%- include('pie_pagina.ejs') %>

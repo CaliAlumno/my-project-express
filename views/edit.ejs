@@ -1,0 +1,44 @@
+<%- include('encabezado.ejs') %>
+
+
+    <form action="/editar" method="post">
+        <div class="mx-auto">
+            <div class="card mx-auto mt-5" style="width: 25rem;">
+                <div class="card-body">
+                    <input type="hidden" name="id" value="<%= fila[0].id %>">
+                    <div class="modal-body">
+                        <label>Nombre del producto</label>
+                        <input type="text" name="nombre" class="form-control" placeholder="Nombre del producto" required
+                            minlength="4" maxlength="30" value="<%= fila[0].nombre %>">
+                        <label>Marca</label>
+                        
+                            <select class="form-select" name="marca" value="<%= fila.marca %>">
+                                <%for(let element of marcas){ %>
+                                    <option value="<%= element.id %>"
+                                    <%= element.id == fila[0].marca ? 'selected' : '' %> >
+                                     <%= element.marca %>
+                                    </option>
+                                <%}%>
+                            </select>
+                            
+                            <label>Precio</label>
+                            <input type="text" name="precio" class="form-control" required min="0" max="1000"
+                                value="<%= fila[0].precio %>">
+
+                            <label>Stock</label>
+                            <input type="number" name="stock" class="form-control" required min="0"
+                                value="<%= fila[0].stock %>">
+
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">Modificar</button>
+                        <button type="reset" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        </div>
+    </form>
+
+    <%- include('pie_pagina.ejs') %>
