@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // ***** Conexión DB *****
 // OPEN_CREATE permite crearla si no existe
-const db = new sqlite3.Database('./datos.db',
+const db = new sqlite3.Database('datos.db',
   sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
   (error) => {
     if (error) {
