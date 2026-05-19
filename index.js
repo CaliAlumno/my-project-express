@@ -26,25 +26,7 @@ const db = new sqlite3.Database('datos.db',
 );
 
 // Crear tablas automáticamente si no existen
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS marcas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      marca TEXT
-    )
-  `);
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS productos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT,
-      marca INTEGER,
-      precio REAL,
-      stock INTEGER,
-      FOREIGN KEY (marca) REFERENCES marcas(id)
-    )
-  `);
-});
 
 // ===== RUTAS =====
 
